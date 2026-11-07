@@ -27,10 +27,15 @@ func main() {
 	}
 
 	usuarios := repository.Usuarios{DB: d}
+	torneos := repository.Torneos{DB: d}
+	cargas := repository.Cargas{DB: d}
 	srv := apihttp.Server{
-		Auth:     service.Auth{Usuarios: usuarios, Secret: []byte(cfg.JWTSecret)},
-		Usuarios: usuarios,
-		CORS:     cfg.CORSOrigin,
+		Auth:       service.Auth{Usuarios: usuarios, Secret: []byte(cfg.JWTSecret)},
+		Usuarios:   usuarios,
+		Torneos:    torneos,
+		Cargas:     service.Cargas{Torneos: torneos, Repo: cargas},
+		CargasRepo: cargas,
+		CORS:       cfg.CORSOrigin,
 	}
 	log.Printf("API escuchando en :%s", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, srv.Router()))

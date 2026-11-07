@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './api/auth'
 import Layout from './components/Layout'
+import DetalleCarga from './pages/DetalleCarga'
 import Historial from './pages/Historial'
 import Login from './pages/Login'
 import NuevaCarga from './pages/NuevaCarga'
@@ -23,6 +24,7 @@ export default function App() {
             <Route index element={<Panel />} />
             <Route path="torneos" element={<Torneos />} />
             <Route path="cargas/nueva" element={<NuevaCarga />} />
+            <Route path="cargas/:id" element={<DetalleCarga />} />
             <Route path="historial" element={<Historial />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

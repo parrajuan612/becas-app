@@ -29,3 +29,15 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   if (!res.ok) throw new ApiError(res.status, data.error ?? 'Error inesperado')
   return data as T
 }
+
+/** Descarga un archivo protegido (el <a href> no envía el JWT): usa fetch + blob. */
+export async function descargar(path: string, nombre: string): Promise<void> {
+  const res = await fetch(`/api${path}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+  if (!res.ok) throw new ApiError(res.status, 'No se pudo descargar el archivo')
+  const url = URL.createObjectURL(await res.blob())
+  const a = document.createElement('a')
+  a.href = url
+  a.download = nombre
+  a.click()
+  URL.revokeObjectURL(url)
+}

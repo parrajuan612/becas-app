@@ -18,9 +18,12 @@ import (
 type ctxKey struct{}
 
 type Server struct {
-	Auth     service.Auth
-	Usuarios repository.Usuarios
-	CORS     string
+	Auth       service.Auth
+	Usuarios   repository.Usuarios
+	Torneos    repository.Torneos
+	Cargas     service.Cargas
+	CargasRepo repository.Cargas
+	CORS       string
 }
 
 func escribirJSON(w http.ResponseWriter, status int, v any) {
@@ -51,6 +54,18 @@ func (s Server) Router() http.Handler {
 		r.Group(func(r chi.Router) {
 			r.Use(s.requiereAuth)
 			r.Get("/auth/me", s.me)
+
+			r.Get("/torneos", s.listarTorneos)
+			r.Post("/torneos", s.crearTorneo)
+			r.Put("/torneos/{id}", s.editarTorneo)
+			r.Delete("/torneos/{id}", s.desactivarTorneo)
+
+			r.Get("/plantilla", s.plantilla)
+
+			r.Post("/cargas", s.crearCarga)
+			r.Get("/cargas", s.listarCargas)
+			r.Get("/cargas/{id}", s.obtenerCarga)
+			r.Get("/cargas/{id}/registros", s.registrosCarga)
 		})
 	})
 	return r
