@@ -1,0 +1,27 @@
+# Uso: cp .env.example .env && docker compose up --build
+# La aplicación queda en http://localhost:${APP_PORT:-8081}
+services:
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      JWT_SECRET: ${JWT_SECRET:-cambia-esto-en-tu-entorno}
+      ADMIN_CORREO: ${ADMIN_CORREO:-admin@horizonte.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123*}
+      SIM_FAILURE_RATE: ${SIM_FAILURE_RATE:-0.05}
+      SIM_MIN_MS: ${SIM_MIN_MS:-50}
+      SIM_MAX_MS: ${SIM_MAX_MS:-200}
+      WORKERS: ${WORKERS:-5}
+    volumes:
+      - becas-data:/app/data   # base de datos SQLite y PDF generados
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${APP_PORT:-8081}:80"
+
+volumes:
+  becas-data:

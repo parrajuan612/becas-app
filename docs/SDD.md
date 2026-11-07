@@ -6,9 +6,9 @@
 | Proyecto | Sistema de notificación automatizada de becas deportivas (prototipo funcional) |
 | Curso / Actividad | Proyecto de Software — Actividad 4: Diseño del prototipo |
 | Autor | Juan Camilo Parra Mancera |
-| Versión | 1.1 (revisada) |
+| Versión | 1.2 (implementada) |
 | Fecha | 7 de noviembre de 2026 |
-| Stack | Go (backend) + React + Vite + TypeScript (frontend) + SQLite |
+| Stack | Go (backend) + React + Vite + TypeScript (frontend) + SQLite. Versiones reales: React 19, TypeScript 7, Tailwind 3 |
 
 > **Nota de contexto:** este prototipo es una versión académica y simplificada de la solución formulada en la Actividad 2. Usa una academia **ficticia** ("Academia Deportiva Horizonte"), **datos inventados** y **envíos simulados** de WhatsApp y correo. No contiene código, datos ni credenciales de ninguna empresa real.
 
@@ -487,3 +487,17 @@ Pegar en la terminal, dentro de la raíz del repositorio (`majestic/`, ya con `g
 4. Máximo 3 intentos por notificación (incluye el envío inicial).
 6. Duplicado = mismo número + torneo + nombre normalizado (permite hermanos con el mismo acudiente).
 5. Academia ficticia: "Academia Deportiva Horizonte".
+
+---
+
+## 14. Desviaciones respecto al diseño original (resultado de la implementación)
+1. **Versiones:** el scaffold de Vite instaló React 19 y TypeScript 7 (el diseño decía React 18).
+2. **Mensaje del notificador:** `Mensaje` incluye además `Asunto` y `Cuerpo` (el texto final generado) para el log y el correo.
+3. **`GET /api/cargas/{id}`** devuelve también el progreso (`notif_total`, `notif_pendientes`, `notif_enviadas`, `notif_fallidas`), que el frontend consulta cada 1 s.
+4. **`GET /api/metricas`** incluye las últimas 5 cargas con `duracion_ms` y `ms_por_registro`. La *tasa de éxito* se define como enviadas ÷ (enviadas + fallidas), y los omitidos solo cuentan cargas confirmadas.
+5. **Duplicados:** la clave es número + torneo + nombre normalizado (permite hermanos con el mismo celular de acudiente).
+6. **Reanudación:** al arrancar, las cargas en `procesando` se reanudan automáticamente.
+7. **Desarrollo:** el proxy de Vite apunta a `VITE_API_TARGET` (por defecto `http://localhost:8080`). En Docker, nginx hace el proxy de `/api`.
+8. **Excel de ejemplo:** los años de nacimiento son relativos al año actual, para que siga dentro del rango de edad válido.
+9. **Docker:** el puerto publicado se configura con `APP_PORT` (por defecto 8081) y los datos viven en el volumen `becas-data`.
+10. **Opcionales (§1.4):** se implementaron todos (cancelar carga, `/auth/me`, Docker/nginx, ms por registro y barras por canal).
