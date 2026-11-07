@@ -47,10 +47,15 @@
 
 Recorrido automatizado con el Chrome del equipo: login con clave incorrecta y correcta, torneo duplicado, carga de `becas_200.xlsx`, previsualización con pestañas, confirmación con barra de progreso, reintento de fallidos, historial con filtros y modal del mensaje, y panel. No hubo errores de consola salvo el 401 (login incorrecto) y el 409 (torneo duplicado), ambos esperados. En esa corrida: 9,4 s de procesamiento, 323 enviadas y 17 fallidas al primer pase, y 339 enviadas y 1 fallida tras un reintento (99,7 % de éxito).
 
-## 4. Hallazgos para la fase F6 (refinamiento)
+## 4. Hallazgos y su resolución (Fase F6)
 
-1. **Secreto por defecto:** si falta `JWT_SECRET`, el servidor usa el valor `cambia-esto-en-tu-entorno` sin avisar. Conviene registrar una advertencia al arrancar (o negarse a arrancar fuera de desarrollo).
-2. **Sin pruebas del nivel HTTP:** añadir unas pocas pruebas de handlers (ruta protegida sin token → 401, login, `/verificar` público) cubriría el requisito RF-01.
-3. **Fechas del Excel de ejemplo:** el generador usa años de nacimiento 2008–2019, y la validación de edad (5–20 años) depende de la fecha actual. A partir de 2029 algunas filas dejarían de ser válidas y la prueba de composición fallaría. Conviene fijar la fecha de referencia o generar años relativos a hoy.
-4. **Portabilidad y Docker:** probar en otro sistema operativo y crear el Docker Compose (F7).
-5. **Capturas pendientes:** "Ver PDF" y vista móvil.
+| # | Hallazgo | Resolución |
+|---|---|---|
+| 1 | Secreto JWT y clave de administrador por defecto sin aviso | El servidor registra una `ADVERTENCIA` al arrancar si usa los valores por defecto (`config.Advertencias()`, con prueba) |
+| 2 | Sin pruebas a nivel HTTP | Nuevo `router_test.go`: `/health` y `/verificar` públicos, 8 rutas protegidas responden 401 sin token o con token falso, login correcto e incorrecto, JSON inválido (400), validación de torneo (400) y nombre duplicado (409) |
+| 3 | El Excel de ejemplo dependía del año actual | Los años de nacimiento se generan entre hoy−18 y hoy−7 años: siempre dentro del rango 5–20. Sigue siendo reproducible (misma semilla) dentro del mismo año |
+| 4 | Faltaban capturas de "Ver PDF" y de la vista móvil | Añadidas (`16-pdf-beca-1.png` y `m1`–`m5`). Se verificó que ninguna pantalla tiene scroll horizontal de página en 390 px |
+| 5 | Menú poco usable en móvil | La barra de navegación pasa a una fila propia con scroll horizontal; el correo se oculta en pantallas pequeñas |
+| 6 | Detalles de interfaz | "WhatsApp" bien escrito, separación en las barras por canal y atributos `autocomplete` en el login (la consola ya no emite avisos) |
+
+**Pendiente para F7:** Docker Compose, README con instalación completa y verificación en otro sistema operativo (RNF-04 y RNF-08).

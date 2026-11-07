@@ -40,6 +40,7 @@ export default function Login() {
           Correo
           <input
             type="email"
+            autoComplete="username"
             required
             value={correo}
             onChange={(e) => setCorreo(e.target.value)}
@@ -50,6 +51,7 @@ export default function Login() {
           Contraseña
           <input
             type="password"
+            autoComplete="current-password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}

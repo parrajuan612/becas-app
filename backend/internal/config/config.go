@@ -84,3 +84,15 @@ func Load() Config {
 		CORSOrigin:  get("CORS_ORIGIN", "http://localhost:5173"),
 	}
 }
+
+// Advertencias devuelve avisos de seguridad cuando se usan valores por defecto de desarrollo.
+func (c Config) Advertencias() []string {
+	var w []string
+	if c.JWTSecret == "cambia-esto-en-tu-entorno" {
+		w = append(w, "JWT_SECRET usa el valor por defecto: defina uno propio en .env antes de desplegar")
+	}
+	if c.AdminPass == "Admin123*" {
+		w = append(w, "ADMIN_PASSWORD usa el valor por defecto: cámbielo en .env antes de desplegar")
+	}
+	return w
+}

@@ -15,6 +15,9 @@ import (
 
 func main() {
 	cfg := config.Load()
+	for _, w := range cfg.Advertencias() {
+		log.Printf("ADVERTENCIA: %s", w)
+	}
 	if err := os.MkdirAll(cfg.PDFDir, 0o755); err != nil {
 		log.Fatal(err)
 	}

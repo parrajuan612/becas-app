@@ -34,6 +34,7 @@ const (
 // Generar escribe el Excel en ruta. Misma semilla => mismo archivo.
 func Generar(ruta string) error {
 	r := rand.New(rand.NewPCG(2027, 42))
+	anioBase := time.Now().Year() // nacimientos entre hoy-18 y hoy-7 años: siempre dentro del rango 5–20
 	usados := map[string]bool{}
 	nuevaPersona := func(i int) fila {
 		var nombre string
@@ -51,7 +52,7 @@ func Generar(ruta string) error {
 			pct: []int{25, 30, 40, 50, 60, 75, 100}[r.IntN(7)], autoriza: "SI",
 		}
 		f.correo = fmt.Sprintf("acudiente%03d@gmail.com", i)
-		nac := time.Date(2008+r.IntN(12), time.Month(1+r.IntN(12)), 1+r.IntN(28), 0, 0, 0, 0, time.UTC)
+		nac := time.Date(anioBase-18+r.IntN(12), time.Month(1+r.IntN(12)), 1+r.IntN(28), 0, 0, 0, 0, time.UTC)
 		if i%10 == 0 {
 			f.fechaExcel = &nac
 		} else {

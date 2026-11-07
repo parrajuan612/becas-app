@@ -97,7 +97,7 @@ export default function Historial() {
             {pagina?.notificaciones.map((n) => (
               <tr key={n.id} className="border-t">
                 <td className="p-3">{n.deportista}<div className="text-xs text-slate-500">{n.torneo}</div></td>
-                <td className="p-3 capitalize">{n.canal}</td>
+                <td className="p-3">{n.canal === 'whatsapp' ? 'WhatsApp' : 'Correo'}</td>
                 <td className="p-3">{n.destino}</td>
                 <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${clase[n.estado]}`}>{n.estado}</span></td>
                 <td className="p-3">{n.intentos}</td>

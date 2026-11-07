@@ -10,6 +10,6 @@ cd frontend && npm install && npm run dev   # UI en :5173
 ```
 Usuario inicial: el definido en `ADMIN_CORREO` / `ADMIN_PASSWORD`.
 
-Estado: F5 (evaluación) completada; ver `docs/EVALUACION.md`.
+Estado: F6 (refinamiento) completada; ver `docs/EVALUACION.md`.
 
 Excel de ejemplo: `cd backend && go run ./cmd/generar-ejemplo` (genera `ejemplos/becas_200.xlsx`).

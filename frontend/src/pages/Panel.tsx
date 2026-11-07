@@ -53,8 +53,8 @@ export default function Panel() {
           const pct = (n: number) => (total ? (n * 100) / total : 0)
           return (
             <div key={canal} className="mb-3 last:mb-0">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="capitalize">{canal}</span>
+              <div className="flex justify-between gap-3 text-sm mb-1">
+                <span>{canal === 'whatsapp' ? 'WhatsApp' : 'Correo'}</span>
                 <span className="text-slate-500">
                   {c.enviado} enviadas · {c.fallido} fallidas · {c.pendiente} pendientes
                 </span>
