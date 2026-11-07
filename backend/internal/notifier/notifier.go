@@ -73,3 +73,6 @@ func (s *Simulado) Enviar(ctx context.Context, m Mensaje) (string, error) {
 	log.Printf("[SIMULADO][%s] -> %s plantilla=%s OK id=%s", s.canal, m.Destino, m.Plantilla, id)
 	return id, nil
 }
+
+// SetRate cambia la tasa de fallo (útil en pruebas y demostraciones).
+func (s *Simulado) SetRate(r float64) { s.FailureRate = r }

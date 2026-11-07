@@ -26,6 +26,7 @@ type Server struct {
 	Envio      *service.Envio
 	Notifs     repository.Notificaciones
 	Becas      repository.Becas
+	Metricas   service.Metricas
 	CORS       string
 }
 
@@ -53,6 +54,7 @@ func (s Server) Router() http.Handler {
 			escribirJSON(w, 200, map[string]string{"estado": "ok"})
 		})
 		r.Post("/auth/login", s.login)
+		r.Get("/verificar/{codigo}", s.verificar)
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requiereAuth)
@@ -76,6 +78,7 @@ func (s Server) Router() http.Handler {
 			r.Get("/notificaciones", s.listarNotificaciones)
 			r.Post("/notificaciones/{id}/reintentar", s.reintentarNotificacion)
 			r.Get("/becas/{id}/pdf", s.pdfBeca)
+			r.Get("/metricas", s.metricas)
 		})
 	})
 	return r

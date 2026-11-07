@@ -350,3 +350,33 @@ func (s Server) pdfBeca(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `inline; filename="`+b.Codigo+`.pdf"`)
 	http.ServeFile(w, r, b.RutaPDF)
 }
+
+// ---------- Métricas y verificación ----------
+
+func (s Server) metricas(w http.ResponseWriter, _ *http.Request) {
+	g, err := s.Metricas.Globales()
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	escribirJSON(w, 200, g)
+}
+
+// verificar es público: confirma que un código existe sin exponer datos personales (nombre enmascarado).
+func (s Server) verificar(w http.ResponseWriter, r *http.Request) {
+	codigo := strings.ToUpper(chi.URLParam(r, "codigo"))
+	if !service.ReCodigo.MatchString(codigo) {
+		escribirJSON(w, 404, map[string]any{"valido": false})
+		return
+	}
+	nombre, torneo, pct, err := s.Becas.PorCodigo(codigo)
+	if errors.Is(err, sql.ErrNoRows) {
+		escribirJSON(w, 404, map[string]any{"valido": false})
+		return
+	}
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	escribirJSON(w, 200, map[string]any{"valido": true, "nombre": service.MascararNombre(nombre), "torneo": torneo, "porcentaje": pct})
+}

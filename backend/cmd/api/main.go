@@ -44,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 	srv := apihttp.Server{
-		Envio: envio, Notifs: notifs, Becas: becas,
+		Envio: envio, Notifs: notifs, Becas: becas, Metricas: service.Metricas{DB: d},
 		Auth:       service.Auth{Usuarios: usuarios, Secret: []byte(cfg.JWTSecret)},
 		Usuarios:   usuarios,
 		Torneos:    torneos,

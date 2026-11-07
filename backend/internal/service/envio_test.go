@@ -125,7 +125,7 @@ func TestReintentoRecuperaFallidas(t *testing.T) {
 	e := nuevoEntorno(t, 1)
 	id := confirmar(t, e, filasEjemplo(2))
 	for _, n := range e.envio.Notifiers { // ahora el proveedor "funciona"
-		n.(*notifier.Simulado).FailureRate = 0
+		n.(*notifier.Simulado).SetRate(0)
 	}
 	if n, _ := e.envio.ReintentarCarga(id); n != 4 {
 		t.Fatalf("reintentadas: %d", n)

@@ -81,3 +81,23 @@ export interface PaginaNotificaciones {
   page: number
   size: number
 }
+
+export interface ConteoCanal {
+  enviado: number
+  fallido: number
+  pendiente: number
+}
+
+export interface CargaMetricas extends CargaDetalle {
+  duracion_ms: number | null
+  ms_por_registro: number | null
+}
+
+export interface Metricas {
+  total_becas: number
+  por_canal: Record<'whatsapp' | 'correo', ConteoCanal>
+  omitidas_duplicado: number
+  omitidas_sin_autorizacion: number
+  tasa_exito: number
+  ultimas_cargas: CargaMetricas[]
+}
