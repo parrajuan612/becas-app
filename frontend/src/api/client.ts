@@ -41,3 +41,10 @@ export async function descargar(path: string, nombre: string): Promise<void> {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+/** Abre un archivo protegido (p. ej. un PDF) en una pestaña nueva usando fetch + blob. */
+export async function abrirBlob(path: string): Promise<void> {
+  const res = await fetch(`/api${path}`, { headers: { Authorization: `Bearer ${getToken()}` } })
+  if (!res.ok) throw new ApiError(res.status, 'No se pudo abrir el archivo')
+  window.open(URL.createObjectURL(await res.blob()), '_blank')
+}

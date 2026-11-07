@@ -68,3 +68,46 @@ type Registro struct {
 	Estado          string   `json:"estado"`
 	Errores         []string `json:"errores"`
 }
+
+type Beca struct {
+	ID               int64
+	CargaID          int64
+	TorneoID         int64
+	Codigo           string
+	Nombre           string
+	Numero           string
+	Correo           string
+	Club             string
+	FechaNacimiento  time.Time
+	Porcentaje       int
+	ValorInscripcion int
+	Descuento        int
+	ValorAPagar      int
+	FechaLimitePago  time.Time
+	RutaPDF          string
+}
+
+// NotificacionItem es una fila del historial.
+type NotificacionItem struct {
+	ID          int64      `json:"id"`
+	BecaID      int64      `json:"beca_id"`
+	CargaID     int64      `json:"carga_id"`
+	Deportista  string     `json:"deportista"`
+	Torneo      string     `json:"torneo"`
+	Canal       string     `json:"canal"`
+	Destino     string     `json:"destino"`
+	Mensaje     string     `json:"mensaje"`
+	Estado      string     `json:"estado"`
+	Intentos    int        `json:"intentos"`
+	UltimoError string     `json:"ultimo_error"`
+	IDExterno   string     `json:"id_externo"`
+	EnviadoEn   *time.Time `json:"enviado_en"`
+}
+
+// Progreso del envío de una carga.
+type Progreso struct {
+	Total      int `json:"notif_total"`
+	Pendientes int `json:"notif_pendientes"`
+	Enviadas   int `json:"notif_enviadas"`
+	Fallidas   int `json:"notif_fallidas"`
+}

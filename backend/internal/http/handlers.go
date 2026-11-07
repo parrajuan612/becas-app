@@ -205,7 +205,11 @@ func (s Server) obtenerCarga(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 500, "Error interno")
 		return
 	}
-	escribirJSON(w, 200, c)
+	p, _ := s.CargasRepo.Progreso(id)
+	escribirJSON(w, 200, struct {
+		domain.Carga
+		domain.Progreso
+	}{c, p})
 }
 
 func (s Server) registrosCarga(w http.ResponseWriter, r *http.Request) {
@@ -229,4 +233,120 @@ func (s Server) registrosCarga(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	escribirJSON(w, 200, map[string]any{"registros": regs, "total": total, "page": page, "size": size})
+}
+
+// ---------- Procesamiento y notificaciones ----------
+
+func (s Server) confirmarCarga(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
+	if !ok {
+		errorJSON(w, 400, "Identificador inválido")
+		return
+	}
+	if _, err := s.CargasRepo.Obtener(id); errors.Is(err, sql.ErrNoRows) {
+		errorJSON(w, 404, "Carga no encontrada")
+		return
+	}
+	switch err := s.Envio.Confirmar(id); {
+	case errors.Is(err, service.ErrEstadoCarga):
+		errorJSON(w, 409, err.Error())
+	case err != nil:
+		errorJSON(w, 500, "Error interno")
+	default:
+		escribirJSON(w, 202, map[string]string{"estado": "procesando"})
+	}
+}
+
+func (s Server) cancelarCarga(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
+	if !ok {
+		errorJSON(w, 400, "Identificador inválido")
+		return
+	}
+	hecho, err := s.CargasRepo.Cancelar(id)
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	if !hecho {
+		errorJSON(w, 409, service.ErrEstadoCarga.Error())
+		return
+	}
+	escribirJSON(w, 200, map[string]string{"estado": "cancelada"})
+}
+
+func (s Server) reintentarCarga(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
+	if !ok {
+		errorJSON(w, 400, "Identificador inválido")
+		return
+	}
+	n, err := s.Envio.ReintentarCarga(id)
+	if errors.Is(err, sql.ErrNoRows) {
+		errorJSON(w, 404, "Carga no encontrada")
+		return
+	}
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	escribirJSON(w, 202, map[string]int{"reintentando": n})
+}
+
+func (s Server) listarNotificaciones(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	num := func(k string) int { n, _ := strconv.Atoi(q.Get(k)); return n }
+	f := repository.Filtro{CargaID: int64(num("carga_id")), TorneoID: int64(num("torneo_id")),
+		Canal: q.Get("canal"), Estado: q.Get("estado"), Page: num("page"), Size: num("size")}
+	if f.Page < 1 {
+		f.Page = 1
+	}
+	if f.Size < 1 || f.Size > 200 {
+		f.Size = 50
+	}
+	items, total, err := s.Notifs.Listar(f)
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	escribirJSON(w, 200, map[string]any{"notificaciones": items, "total": total, "page": f.Page, "size": f.Size})
+}
+
+func (s Server) reintentarNotificacion(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
+	if !ok {
+		errorJSON(w, 400, "Identificador inválido")
+		return
+	}
+	n, err := s.Envio.ReintentarNotificacion(r.Context(), id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		errorJSON(w, 404, "Notificación no encontrada")
+	case errors.Is(err, service.ErrNoReintentable), errors.Is(err, service.ErrMaxIntentos):
+		errorJSON(w, 409, err.Error())
+	case err != nil:
+		errorJSON(w, 500, "Error interno")
+	default:
+		escribirJSON(w, 200, n)
+	}
+}
+
+func (s Server) pdfBeca(w http.ResponseWriter, r *http.Request) {
+	id, ok := idParam(r)
+	if !ok {
+		errorJSON(w, 400, "Identificador inválido")
+		return
+	}
+	b, err := s.Becas.Obtener(id)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && b.RutaPDF == "") {
+		errorJSON(w, 404, "PDF no disponible")
+		return
+	}
+	if err != nil {
+		errorJSON(w, 500, "Error interno")
+		return
+	}
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", `inline; filename="`+b.Codigo+`.pdf"`)
+	http.ServeFile(w, r, b.RutaPDF)
 }

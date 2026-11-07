@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
-import type { Carga, EstadoRegistro, PaginaRegistros } from '../types'
+import type { CargaDetalle, EstadoRegistro, PaginaRegistros } from '../types'
 
 const TAMANO = 50
 
@@ -22,23 +22,51 @@ const etiqueta: Record<EstadoRegistro, { texto: string; clase: string }> = {
 
 export default function DetalleCarga() {
   const { id } = useParams()
-  const [carga, setCarga] = useState<Carga | null>(null)
+  const [carga, setCarga] = useState<CargaDetalle | null>(null)
   const [pagina, setPagina] = useState<PaginaRegistros | null>(null)
   const [estado, setEstado] = useState<EstadoRegistro | ''>('')
   const [page, setPage] = useState(1)
   const [error, setError] = useState('')
+  const [reintentando, setReintentando] = useState(false)
+
+  const cargarCarga = useCallback(
+    () => api<CargaDetalle>(`/cargas/${id}`).then(setCarga).catch((e) => setError(e.message)),
+    [id],
+  )
 
   useEffect(() => {
-    api<Carga>(`/cargas/${id}`).then(setCarga).catch((e) => setError(e.message))
-  }, [id])
+    cargarCarga()
+  }, [cargarCarga])
+
+  // Mientras se envía (o se reintentan fallidas) se consulta el estado cada 1 s.
+  const enCurso = carga?.estado === 'procesando' || (carga?.notif_pendientes ?? 0) > 0 || reintentando
+  useEffect(() => {
+    if (!enCurso) return
+    const t = setInterval(cargarCarga, 1000)
+    return () => clearInterval(t)
+  }, [enCurso, cargarCarga])
 
   useEffect(() => {
     api<PaginaRegistros>(`/cargas/${id}/registros?estado=${estado}&page=${page}&size=${TAMANO}`)
       .then(setPagina)
       .catch((e) => setError(e.message))
-  }, [id, estado, page])
+  }, [id, estado, page, carga?.estado])
 
-  if (error) return <p className="text-red-600">{error}</p>
+  const accion = async (ruta: string) => {
+    setError('')
+    try {
+      await api(`/cargas/${id}/${ruta}`, { method: 'POST' })
+      if (ruta === 'reintentar') {
+        setReintentando(true)
+        setTimeout(() => setReintentando(false), 4000)
+      }
+      await cargarCarga()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error')
+    }
+  }
+
+  if (error && !carga) return <p className="text-red-600">{error}</p>
   if (!carga) return <p className="text-slate-500">Cargando…</p>
 
   const tarjetas = [
@@ -53,8 +81,29 @@ export default function DetalleCarga() {
   return (
     <section>
       <Link to="/cargas/nueva" className="text-sm text-indigo-600 hover:underline">← Nueva carga</Link>
-      <h1 className="text-xl font-semibold mt-1">Previsualización: {carga.nombre_archivo}</h1>
+      <h1 className="text-xl font-semibold mt-1">
+        {carga.estado === 'previsualizada' ? 'Previsualización' : 'Carga'}: {carga.nombre_archivo}
+      </h1>
       <p className="text-sm text-slate-500 mb-4">Estado: {carga.estado}</p>
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+
+      {carga.estado === 'previsualizada' && (
+        <div className="flex gap-2 mb-4 items-center flex-wrap">
+          <button
+            disabled={carga.validas === 0}
+            onClick={() => accion('confirmar')}
+            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            Confirmar y enviar ({carga.validas})
+          </button>
+          <button onClick={() => accion('cancelar')} className="px-4 py-2 rounded border bg-white hover:bg-slate-50">
+            Cancelar
+          </button>
+          <span className="text-sm text-slate-500">Solo se procesarán las filas válidas.</span>
+        </div>
+      )}
+
+      {carga.estado !== 'previsualizada' && carga.estado !== 'cancelada' && <Progreso c={carga} onReintentar={() => accion('reintentar')} />}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {tarjetas.map((t) => (
@@ -116,7 +165,36 @@ export default function DetalleCarga() {
           <button disabled={page >= paginas} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded bg-white disabled:opacity-40">Siguiente</button>
         </div>
       </div>
-      <p className="mt-6 text-sm text-slate-500">El envío de las becas válidas se habilitará en la fase F3.</p>
     </section>
+  )
+}
+
+function Progreso({ c, onReintentar }: { c: CargaDetalle; onReintentar: () => void }) {
+  const hechas = c.notif_enviadas + c.notif_fallidas
+  const total = Math.max(c.notif_total, 2 * c.validas)
+  const pct = total ? Math.round((hechas / total) * 100) : 0
+  const terminada = c.estado === 'completada' && c.notif_pendientes === 0
+  const seg = c.inicio_proceso && c.fin_proceso ? (new Date(c.fin_proceso).getTime() - new Date(c.inicio_proceso).getTime()) / 1000 : null
+  return (
+    <div className="bg-white rounded shadow p-4 mb-6">
+      <div className="flex justify-between text-sm mb-1">
+        <span>{terminada ? 'Procesamiento completado' : 'Enviando notificaciones…'}</span>
+        <span>{hechas} / {total} ({pct}%)</span>
+      </div>
+      <div className="h-3 bg-slate-200 rounded overflow-hidden">
+        <div className="h-full bg-green-500 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3 text-sm">
+        <span className="text-green-700">Enviadas: {c.notif_enviadas}</span>
+        <span className="text-red-700">Fallidas: {c.notif_fallidas}</span>
+        {seg !== null && <span className="text-slate-600">Duración: {seg.toFixed(1)} s</span>}
+        {terminada && c.notif_fallidas > 0 && (
+          <button onClick={onReintentar} className="ml-auto px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700">
+            Reintentar fallidos
+          </button>
+        )}
+      </div>
+      {terminada && <Link to={`/historial?carga_id=${c.id}`} className="inline-block mt-3 text-sm text-indigo-600 hover:underline">Ver historial de esta carga →</Link>}
+    </div>
   )
 }

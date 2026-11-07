@@ -49,3 +49,35 @@ export interface PaginaRegistros {
   page: number
   size: number
 }
+
+export interface CargaDetalle extends Carga {
+  notif_total: number
+  notif_pendientes: number
+  notif_enviadas: number
+  notif_fallidas: number
+}
+
+export type EstadoNotif = 'pendiente' | 'enviado' | 'fallido'
+
+export interface Notificacion {
+  id: number
+  beca_id: number
+  carga_id: number
+  deportista: string
+  torneo: string
+  canal: 'whatsapp' | 'correo'
+  destino: string
+  mensaje: string
+  estado: EstadoNotif
+  intentos: number
+  ultimo_error: string
+  id_externo: string
+  enviado_en: string | null
+}
+
+export interface PaginaNotificaciones {
+  notificaciones: Notificacion[]
+  total: number
+  page: number
+  size: number
+}

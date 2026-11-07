@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/juan-camilo/becas-app/backend/internal/domain"
 )
@@ -139,4 +140,59 @@ func (r Cargas) ExisteBeca(numero string, torneoID int64, nombreNorm string) (bo
 	err := r.DB.QueryRow(`SELECT COUNT(*) FROM becas WHERE numero=? AND torneo_id=? AND nombre_normalizado=?`,
 		numero, torneoID, nombreNorm).Scan(&n)
 	return n > 0, err
+}
+
+// IniciarProceso pasa la carga de previsualizada a procesando (atómico). false si no estaba previsualizada.
+func (r Cargas) IniciarProceso(id int64) (bool, error) {
+	res, err := r.DB.Exec(`UPDATE cargas SET estado='procesando', inicio_proceso=? WHERE id=? AND estado='previsualizada'`, time.Now().UTC(), id)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+func (r Cargas) Cancelar(id int64) (bool, error) {
+	res, err := r.DB.Exec(`UPDATE cargas SET estado='cancelada' WHERE id=? AND estado='previsualizada'`, id)
+	if err != nil {
+		return false, err
+	}
+	n, _ := res.RowsAffected()
+	return n == 1, nil
+}
+
+// Completar recalcula los conteos desde los registros y cierra la carga.
+func (r Cargas) Completar(id int64) error {
+	_, err := r.DB.Exec(`UPDATE cargas SET estado='completada', fin_proceso=?,
+		validas=(SELECT COUNT(*) FROM registros WHERE carga_id=cargas.id AND estado='valido'),
+		invalidas=(SELECT COUNT(*) FROM registros WHERE carga_id=cargas.id AND estado='invalido'),
+		omitidas_duplicado=(SELECT COUNT(*) FROM registros WHERE carga_id=cargas.id AND estado='omitido_duplicado'),
+		omitidas_sin_autorizacion=(SELECT COUNT(*) FROM registros WHERE carga_id=cargas.id AND estado='omitido_sin_autorizacion')
+		WHERE id=?`, time.Now().UTC(), id)
+	return err
+}
+
+func (r Cargas) IDsProcesando() ([]int64, error) {
+	rows, err := r.DB.Query(`SELECT id FROM cargas WHERE estado='procesando'`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
+}
+
+func (r Cargas) Progreso(id int64) (domain.Progreso, error) {
+	var p domain.Progreso
+	err := r.DB.QueryRow(`SELECT COUNT(*),COALESCE(SUM(n.estado='pendiente'),0),COALESCE(SUM(n.estado='enviado'),0),COALESCE(SUM(n.estado='fallido'),0)
+		FROM notificaciones n JOIN becas b ON b.id=n.beca_id WHERE b.carga_id=?`, id).
+		Scan(&p.Total, &p.Pendientes, &p.Enviadas, &p.Fallidas)
+	return p, err
 }

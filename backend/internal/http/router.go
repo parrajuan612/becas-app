@@ -23,6 +23,9 @@ type Server struct {
 	Torneos    repository.Torneos
 	Cargas     service.Cargas
 	CargasRepo repository.Cargas
+	Envio      *service.Envio
+	Notifs     repository.Notificaciones
+	Becas      repository.Becas
 	CORS       string
 }
 
@@ -66,6 +69,13 @@ func (s Server) Router() http.Handler {
 			r.Get("/cargas", s.listarCargas)
 			r.Get("/cargas/{id}", s.obtenerCarga)
 			r.Get("/cargas/{id}/registros", s.registrosCarga)
+			r.Post("/cargas/{id}/confirmar", s.confirmarCarga)
+			r.Post("/cargas/{id}/cancelar", s.cancelarCarga)
+			r.Post("/cargas/{id}/reintentar", s.reintentarCarga)
+
+			r.Get("/notificaciones", s.listarNotificaciones)
+			r.Post("/notificaciones/{id}/reintentar", s.reintentarNotificacion)
+			r.Get("/becas/{id}/pdf", s.pdfBeca)
 		})
 	})
 	return r

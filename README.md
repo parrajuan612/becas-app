@@ -10,4 +10,4 @@ cd frontend && npm install && npm run dev   # UI en :5173
 ```
 Usuario inicial: el definido en `ADMIN_CORREO` / `ADMIN_PASSWORD`.
 
-Estado: F2 (torneos, plantilla, carga, validación y previsualización) completada.
+Estado: F3 (confirmación, becas, PDF, envío simulado, historial y reintentos) completada.
