@@ -31,7 +31,7 @@
 | RNF-05 | Mantenibilidad | Capas handler → servicio → repositorio; envío tras la interfaz `Notifier` | Cumple |
 | RNF-06 | Trazabilidad | Cada notificación guarda intentos, último error, fecha de envío y mensaje | Cumple |
 | RNF-07 | Calidad | `go vet` sin errores, `go test ./...` con **28 pruebas, 0 fallos**, `tsc --noEmit` sin errores | Cumple |
-| RNF-08 | Instalación | Instalación manual con pocos comandos (README). Docker Compose **aún no creado** (es parte de F7) | Pendiente (F7) |
+| RNF-08 | Instalación | `docker compose up --build` levanta todo (verificado en F7: API, nginx con proxy de `/api`, flujo completo 170/20/5/5 y datos persistentes tras reiniciar el backend). Instalación manual con 4 comandos (README) | Cumple |
 
 ### Cobertura de pruebas (Go)
 
@@ -58,4 +58,4 @@ Recorrido automatizado con el Chrome del equipo: login con clave incorrecta y co
 | 5 | Menú poco usable en móvil | La barra de navegación pasa a una fila propia con scroll horizontal; el correo se oculta en pantallas pequeñas |
 | 6 | Detalles de interfaz | "WhatsApp" bien escrito, separación en las barras por canal y atributos `autocomplete` en el login (la consola ya no emite avisos) |
 
-**Pendiente para F7:** Docker Compose, README con instalación completa y verificación en otro sistema operativo (RNF-04 y RNF-08).
+**Resuelto en F7:** Docker Compose, README con instalación completa (Docker y manual) y SDD actualizado. **Sigue pendiente:** verificar en Windows y macOS (RNF-04).
